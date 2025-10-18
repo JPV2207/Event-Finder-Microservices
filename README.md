@@ -7,6 +7,7 @@ Event Finder is a microservices-based application designed to help users discove
 - **User Management**: Register, login, and manage user profiles with role-based access (user, organizer, admin).
 - **Event Management**: Create, update, delete, like, comment on, and search events by category, date, price, or city.
 - **Organizer Applications**: Apply to become an organizer, check application status, and admin review of applications.
+- **Admin Functionality**: Manage user roles and review organizer applications (integrated into User and Organizer Services).
 - **Authentication**: JWT-based authentication for secure access to protected routes.
 - **Role-Based Authorization**: Restrict access to admin or organizer-specific actions.
 - **API Gateway**: Nginx routes requests to appropriate services, ensuring seamless communication.
@@ -15,7 +16,7 @@ Event Finder is a microservices-based application designed to help users discove
 The application follows a microservices architecture, with the following services:
 
 - **User Service** (`user-service`, port 4000):
-  - Handles user registration, login, profile retrieval, and role updates.
+  - Handles user registration, login, profile retrieval, and role updates (admin-only).
   - Stores user data in the `event-finder-users` MongoDB database.
   - Generates JWT tokens for authentication.
 
@@ -27,10 +28,13 @@ The application follows a microservices architecture, with the following service
 - **Organizer Service** (`organizer-service`, port 8000):
   - Manages organizer application submissions, status checks, and admin reviews.
   - Stores application data in the `event-finder-organizers` MongoDB database.
+  - Includes admin routes for reviewing organizer applications.
 
 - **API Gateway** (Nginx, port 8080):
   - Proxies requests to the appropriate service based on the URL path (e.g., `/api/users`, `/api/events`, `/api/organizer`).
   - Provides a unified entry point for the frontend.
+
+**Admin Functionality**: Admin tasks, such as reviewing organizer applications and updating user roles, are integrated into the Organizer Service (`/api/organizer/applications`) and User Service (`/api/users/:userId`). These routes are protected by the `authorizeRoles(["admin"])` middleware.
 
 Each service uses Express for routing, Mongoose for MongoDB interactions, and middleware for authentication (`auth.js`) and role-based authorization (`authorizeRoles.js`).
 
@@ -45,8 +49,8 @@ Each service uses Express for routing, Mongoose for MongoDB interactions, and mi
 
 ### 1. Clone the Repository
 ```bash
-git clone <repository-url>
-cd event-finder-microservices
+git clone https://github.com/JPV2207/Event-Finder-Microservices.git
+cd Event-Finder-Microservices
 ```
 
 ### 2. Set Up Environment Variables
@@ -146,9 +150,6 @@ All endpoints are prefixed with `http://localhost:8080/api/`.
 - `POST /applications/:id/approve`: Approve an application (admin-only, requires JWT).
 - `POST /applications/:id/reject`: Reject an application (admin-only, requires JWT, body: `{ reason }`).
 
-#### Admin Routes
-- Admin routes are integrated into the Organizer Service (`/organizer/applications`) and User Service (`/users/:userId`).
-
 ### Authentication
 - Use the `/api/users/login` endpoint to obtain a JWT token.
 - Include the token in the `Authorization` header: `Bearer <token>` for protected routes.
@@ -168,9 +169,10 @@ event-finder-microservices/
 ├── organizer-service/
 │   ├── controllers/
 │   ├── middlewares/
-│   ├── models/
+│   ├── models/    
+│   ├── repositories/
 │   ├── routes/
-│   └── server.js
+│   └── index.js
 ├── user-service/
 │   ├── controllers/
 │   ├── middlewares/
@@ -178,8 +180,14 @@ event-finder-microservices/
 │   ├── repositories/
 │   ├── routes/
 │   ├── scripts/
-│   └── server.js
-├── nginx.conf
+│   └── index.js
+├── admin-service/
+│   ├── middlewares/
+│   ├── routes/
+│   └── index.js
+├── api-gateway/
+│   ├── nginx.conf
+
 ```
 
 ### Running Locally
